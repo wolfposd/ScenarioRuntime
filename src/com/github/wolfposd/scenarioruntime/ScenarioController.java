@@ -72,7 +72,6 @@ public class ScenarioController extends AbstractRuntime {
                 try {
                     while (true) {
                         int sleepytime = ui.slider.getValue();
-                        System.out.println("Next Tick in " + sleepytime + " seconds");
                         Thread.sleep(sleepytime * MILLISECONDS);
                         notifyActorsOfDateTick();
                     }

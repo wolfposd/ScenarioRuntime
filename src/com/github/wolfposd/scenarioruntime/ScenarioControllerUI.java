@@ -30,6 +30,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.swing.BorderFactory;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -49,6 +50,7 @@ public class ScenarioControllerUI {
     public JButton play;
     public JButton step;
     public JSlider slider;
+    private JList<String> actorSelectionList;
 
     public ScenarioControllerUI() {
         frame = new JFrame("Scenario Runtime");
@@ -57,7 +59,7 @@ public class ScenarioControllerUI {
         actors.setCellRenderer(new ScenarioActorListRenderer());
         actors.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        JList<String> actorSelectionList = new JList<>(new DefaultListModel<String>());
+        actorSelectionList = new JList<>(new DefaultListModel<String>());
         play = new JButton("Play");
         step = new JButton("Step");
         slider = new JSlider(2, 300);
@@ -69,8 +71,11 @@ public class ScenarioControllerUI {
 
         JPanel centerPanel = new JPanel(new GridLayout(1, 2));
         JScrollPane scroll = new JScrollPane(actors);
+        JScrollPane scroll2 = new JScrollPane(actorSelectionList);
+        scroll.setBorder(BorderFactory.createTitledBorder("Actors"));
+        scroll2.setBorder(BorderFactory.createTitledBorder("Details"));
         centerPanel.add(scroll);
-        centerPanel.add(new JScrollPane(actorSelectionList));
+        centerPanel.add(scroll2);
 
         JPanel southPanel = new JPanel(new BorderLayout());
         southPanel.add(play, BorderLayout.WEST);
@@ -97,13 +102,11 @@ public class ScenarioControllerUI {
         actors.addListSelectionListener(e -> actorsListSelectionChanged(e));
     }
 
-    @SuppressWarnings("unchecked")
     private void actorsListSelectionChanged(ListSelectionEvent e) {
         if (!e.getValueIsAdjusting() && actors.getSelectedValue() != null) {
             ScenarioActor selected = actors.getSelectedValue();
 
-            System.out.println(selected);
-            DefaultListModel<String> model = (DefaultListModel<String>) ((JList<String>) e.getSource()).getModel();
+            DefaultListModel<String> model = (DefaultListModel<String>) actorSelectionList.getModel();
             model.removeAllElements();
 
             ArrayList<Field> myFields = new ArrayList<>();
@@ -148,8 +151,11 @@ public class ScenarioControllerUI {
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             JLabel result = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            ScenarioActor v = (ScenarioActor) value;
-            result.setText(v.displayName());
+
+            if (value instanceof ScenarioActor) {
+                ScenarioActor v = (ScenarioActor) value;
+                result.setText(v.displayName());
+            }
             return result;
         }
 
