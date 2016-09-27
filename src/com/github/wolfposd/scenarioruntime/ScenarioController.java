@@ -23,10 +23,19 @@
  */
 package com.github.wolfposd.scenarioruntime;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 public class ScenarioController extends AbstractRuntime {
 
     private ScenarioControllerUI ui;
     private Thread runtimeThread;
+    private int currentDateIndex = -1;
+
+    private IMessageDetail messageDetail;
+
+    private List<Date> dates = new ArrayList<>();
 
     public ScenarioController() {
         super(FIFTEENMINUTES_IN_SECONDS);
@@ -34,6 +43,8 @@ public class ScenarioController extends AbstractRuntime {
 
         ui.play.addActionListener(e -> playButtonPressed());
         ui.step.addActionListener(e -> stepButtonPressed());
+        ui.prevDate.addActionListener(e -> previousDateSelected());
+        ui.nextDate.addActionListener(e -> nextDateSelected());
 
         ui.setVisible(true);
     }
@@ -51,6 +62,11 @@ public class ScenarioController extends AbstractRuntime {
         }
     }
 
+    public void setMessageDetail(IMessageDetail imd) {
+        messageDetail = imd;
+        messageDetail.setCallBack(() -> updateMessageBoard());
+    }
+
     private void playButtonPressed() {
         if (runtimeThread == null) {
             startThread();
@@ -64,6 +80,36 @@ public class ScenarioController extends AbstractRuntime {
 
     private void stepButtonPressed() {
         notifyActorsOfDateTick();
+    }
+
+    private void previousDateSelected() {
+        currentDateIndex--;
+        if (currentDateIndex < 0)
+            currentDateIndex = 0;
+        if (messageDetail != null)
+            updateMessageBoard();
+    }
+
+    private void nextDateSelected() {
+        currentDateIndex++;
+        if (currentDateIndex >= dates.size())
+            currentDateIndex = dates.size() - 1;
+        if (messageDetail != null)
+            updateMessageBoard();
+    }
+
+    private void updateMessageBoard() {
+        Date d = dates.get(currentDateIndex);
+        ui.messageBoard.setText("Date: " + d + "\n");
+        if (messageDetail != null) {
+            List<SRMessage> msgs = messageDetail.getMessagesForDate(d);
+            if (msgs != null) {
+                for (SRMessage m : msgs) {
+                    ui.messageBoard.append(m.getDisplayMessage());
+                    ui.messageBoard.append("\n");
+                }
+            }
+        }
     }
 
     private void startThread() {
@@ -80,6 +126,14 @@ public class ScenarioController extends AbstractRuntime {
             }
         });
         runtimeThread.start();
+    }
+
+    @Override
+    protected void notifyActorsOfDateTick() {
+        dates.add(super.currentDate);
+        currentDateIndex++;
+        super.notifyActorsOfDateTick();
+        updateMessageBoard();
     }
 
 }

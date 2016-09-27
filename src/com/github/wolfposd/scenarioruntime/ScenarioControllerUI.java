@@ -40,6 +40,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.JTextArea;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 
@@ -50,10 +51,22 @@ public class ScenarioControllerUI {
     public JButton play;
     public JButton step;
     public JSlider slider;
-    private JList<String> actorSelectionList;
+    public JList<String> actorSelectionList;
+    public JButton prevDate;
+    public JButton nextDate;
+    public JTextArea messageBoard;
 
     public ScenarioControllerUI() {
         frame = new JFrame("Scenario Runtime");
+
+        frame.add(setupScenarioView(), BorderLayout.WEST);
+        frame.add(setupMessageDetailView(), BorderLayout.EAST);
+
+        frame.pack();
+        frame.setLocation(100, 100);
+    }
+
+    private JPanel setupScenarioView() {
         actors = new JList<>();
         actors.setModel(new DefaultListModel<>());
         actors.setCellRenderer(new ScenarioActorListRenderer());
@@ -87,11 +100,7 @@ public class ScenarioControllerUI {
 
         southPanel.add(sliderPanel, BorderLayout.NORTH);
 
-        frame.add(centerPanel, BorderLayout.CENTER);
-        frame.add(southPanel, BorderLayout.SOUTH);
-
-        frame.setSize(300, 300);
-        frame.setLocation(100, 100);
+        JPanel mainpanel = new JPanel(new BorderLayout());
 
         slider.addChangeListener(e -> {
             JSlider source = (JSlider) e.getSource();
@@ -100,6 +109,29 @@ public class ScenarioControllerUI {
         });
 
         actors.addListSelectionListener(e -> actorsListSelectionChanged(e));
+
+        mainpanel.add(centerPanel, BorderLayout.CENTER);
+        mainpanel.add(southPanel, BorderLayout.SOUTH);
+        return mainpanel;
+
+    }
+
+    private JPanel setupMessageDetailView() {
+        JPanel mainpanel = new JPanel(new BorderLayout());
+
+        prevDate = new JButton("<-");
+        nextDate = new JButton("->");
+
+        messageBoard = new JTextArea();
+
+        JPanel north = new JPanel();
+        north.add(prevDate);
+        north.add(nextDate);
+
+        mainpanel.add(north, BorderLayout.NORTH);
+        mainpanel.add(messageBoard, BorderLayout.CENTER);
+
+        return mainpanel;
     }
 
     private void actorsListSelectionChanged(ListSelectionEvent e) {
