@@ -24,9 +24,11 @@
 package com.github.wolfposd.scenarioruntime;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.GridLayout;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
@@ -37,6 +39,8 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.ListSelectionEvent;
 
 public class ScenarioControllerUI {
 
@@ -51,9 +55,9 @@ public class ScenarioControllerUI {
         actors = new JList<>();
         actors.setModel(new DefaultListModel<>());
         actors.setCellRenderer(new ScenarioActorListRenderer());
+        actors.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        JPanel actorSelectionPanel = new JPanel();
-        actorSelectionPanel.setBackground(Color.red);
+        JList<String> actorSelectionList = new JList<>(new DefaultListModel<String>());
         play = new JButton("Play");
         step = new JButton("Step");
         slider = new JSlider(2, 300);
@@ -66,7 +70,7 @@ public class ScenarioControllerUI {
         JPanel centerPanel = new JPanel(new GridLayout(1, 2));
         JScrollPane scroll = new JScrollPane(actors);
         centerPanel.add(scroll);
-        centerPanel.add(actorSelectionPanel);
+        centerPanel.add(new JScrollPane(actorSelectionList));
 
         JPanel southPanel = new JPanel(new BorderLayout());
         southPanel.add(play, BorderLayout.WEST);
@@ -89,17 +93,57 @@ public class ScenarioControllerUI {
             int slidervalue = (int) source.getValue();
             sliderValue.setText("Time: " + slidervalue + " seconds");
         });
+
+        actors.addListSelectionListener(e -> actorsListSelectionChanged(e));
     }
 
-    public DefaultListModel<ScenarioActor> getListModel() {
+    @SuppressWarnings("unchecked")
+    private void actorsListSelectionChanged(ListSelectionEvent e) {
+        if (!e.getValueIsAdjusting() && actors.getSelectedValue() != null) {
+            ScenarioActor selected = actors.getSelectedValue();
+
+            System.out.println(selected);
+            DefaultListModel<String> model = (DefaultListModel<String>) ((JList<String>) e.getSource()).getModel();
+            model.removeAllElements();
+
+            ArrayList<Field> myFields = new ArrayList<>();
+            getAllFields(selected.getClass(), myFields);
+            for (Field f : myFields) {
+                try {
+                    f.setAccessible(true);
+                    Object value = f.get(selected);
+                    String name = f.getName();
+                    model.addElement(name + ": " + (value == null ? "null" : value.toString()));
+                } catch (IllegalArgumentException | IllegalAccessException e1) {
+                }
+            }
+        }
+    }
+
+    private void getAllFields(Class<?> o, Collection<Field> fields) {
+        if (o != Object.class && o.getSuperclass() != null) {
+            getAllFields(o.getSuperclass(), fields);
+            for (Field f : o.getDeclaredFields()) {
+                fields.add(f);
+            }
+        }
+    }
+
+    public DefaultListModel<ScenarioActor> getActorsListModel() {
         return (DefaultListModel<ScenarioActor>) actors.getModel();
     }
 
-    public void setVisible(boolean vis) {
-        frame.setVisible(vis);
+    /**
+     * Sets this frame visible/invisible
+     * 
+     * @param visible
+     */
+    public void setVisible(boolean visible) {
+        frame.setVisible(visible);
     }
 
     public class ScenarioActorListRenderer extends DefaultListCellRenderer {
+        private static final long serialVersionUID = 1L;
 
         @Override
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {

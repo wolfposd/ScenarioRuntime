@@ -41,7 +41,7 @@ public class ScenarioController extends AbstractRuntime {
     @Override
     public void addActor(ScenarioActor act) {
         super.addActor(act);
-        ui.getListModel().addElement(act);
+        ui.getActorsListModel().addElement(act);
     }
 
     @Override
